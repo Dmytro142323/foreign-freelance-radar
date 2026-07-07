@@ -1,0 +1,39 @@
+name: Foreign Freelance Radar
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Every 2 hours. GitHub may delay scheduled jobs a little on the free tier.
+    - cron: "17 */2 * * *"
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run freelance radar and send Telegram cards
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python -m py_compile foreign_freelance_radar.py
+          python foreign_freelance_radar.py --limit 20 --per-source 20 --min-source 15 --send
+
+      - name: Upload latest results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: freelance-radar-results
+          path: |
+            foreign_freelance_radar_results.json
+            foreign_freelance_radar_results.md
+          if-no-files-found: ignore

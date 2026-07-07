@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+.env
+foreign_freelance_radar_results.json
+foreign_freelance_radar_results.md
