@@ -55,6 +55,7 @@ class Source:
     query: str = ""
     channel: str = ""
     direction: str = ""
+    payment: str = ""
 
 
 @dataclass
@@ -71,32 +72,44 @@ class Lead:
     raw_source_kind: str = ""
 
 
-# 25 sources/directions. Enabled defaults focus on project-feed sources,
+# Sources/directions. Enabled defaults focus on project-feed sources,
 # not full-time job boards. Telegram channels are public-feed based; edit
 # channel names or enable more once you know which feeds you like.
 SOURCES: list[Source] = [
-    Source("Freelancer - web scraping", "freelancer", True, query="web scraping"),
-    Source("Freelancer - API integrations", "freelancer", True, query="api integration"),
-    Source("Freelancer - AI automation", "freelancer", True, query="ai automation"),
-    Source("Freelancer - React Next.js", "freelancer", True, query="react next.js"),
-    Source("Freelancer - WordPress", "freelancer", True, query="wordpress plugin"),
-    Source("Freelancer - Chrome extensions", "freelancer", True, query="chrome extension"),
-    Source("Freelancer - dashboards CRM", "freelancer", True, query="dashboard crm"),
-    Source("Freelancer - Zapier Make n8n", "freelancer", True, query="zapier make n8n"),
-    Source("PPH - Technology Programming", "peopleperhour", True, url="https://www.peopleperhour.com/freelance-jobs/technology-programming"),
-    Source("PPH - Programming Coding", "peopleperhour", True, url="https://www.peopleperhour.com/freelance-jobs/technology-programming/programming-coding"),
-    Source("PPH - Data Science Analysis", "peopleperhour", True, url="https://www.peopleperhour.com/freelance-jobs/technology-programming/data-science-analysis"),
-    Source("PPH - Website Development", "peopleperhour", True, url="https://www.peopleperhour.com/freelance-jobs/technology-programming/website-development"),
-    Source("PPH - CMS WordPress", "peopleperhour", True, url="https://www.peopleperhour.com/freelance-jobs/technology-programming/cms-development"),
-    Source("Algora - Cal.com bounties", "algora", True, url="https://algora.io/org/cal/bounties"),
-    Source("Algora - Trigger.dev bounties", "algora", True, url="https://algora.io/triggerdotdev/bounties"),
-    Source("Algora - ZIO bounties", "algora", False, url="https://algora.io/org/ZIO/bounties"),
+    Source("Freelancer - web scraping", "freelancer", True, query="web scraping", payment="platform escrow; PayPal withdrawal may depend on country/account"),
+    Source("Freelancer - API integrations", "freelancer", True, query="api integration", payment="platform escrow; PayPal withdrawal may depend on country/account"),
+    Source("Freelancer - AI automation", "freelancer", True, query="ai automation", payment="platform escrow; PayPal withdrawal may depend on country/account"),
+    Source("Freelancer - React Next.js", "freelancer", True, query="react next.js", payment="platform escrow; PayPal withdrawal may depend on country/account"),
+    Source("Freelancer - WordPress", "freelancer", True, query="wordpress plugin", payment="platform escrow; PayPal withdrawal may depend on country/account"),
+    Source("Freelancer - Chrome extensions", "freelancer", True, query="chrome extension", payment="platform escrow; PayPal withdrawal may depend on country/account"),
+    Source("Freelancer - dashboards CRM", "freelancer", True, query="dashboard crm", payment="platform escrow; PayPal withdrawal may depend on country/account"),
+    Source("Freelancer - Zapier Make n8n", "freelancer", True, query="zapier make n8n", payment="platform escrow; PayPal withdrawal may depend on country/account"),
+    Source("PPH - Technology Programming", "peopleperhour", True, url="https://www.peopleperhour.com/freelance-jobs/technology-programming", payment="international platform payouts; check PayPal availability in your account"),
+    Source("PPH - Programming Coding", "peopleperhour", True, url="https://www.peopleperhour.com/freelance-jobs/technology-programming/programming-coding", payment="international platform payouts; check PayPal availability in your account"),
+    Source("PPH - Data Science Analysis", "peopleperhour", True, url="https://www.peopleperhour.com/freelance-jobs/technology-programming/data-science-analysis", payment="international platform payouts; check PayPal availability in your account"),
+    Source("PPH - Website Development", "peopleperhour", True, url="https://www.peopleperhour.com/freelance-jobs/technology-programming/website-development", payment="international platform payouts; check PayPal availability in your account"),
+    Source("PPH - CMS WordPress", "peopleperhour", True, url="https://www.peopleperhour.com/freelance-jobs/technology-programming/cms-development", payment="international platform payouts; check PayPal availability in your account"),
+    Source("Guru - Programming & Development", "generic_html", True, url="https://www.guru.com/d/jobs/c/programming-development/", payment="Guru SafePay; PayPal withdrawal historically available in many regions"),
+    Source("Guru - Web scraping search", "generic_html", True, url="https://www.guru.com/d/jobs/skill/web-scraping/", payment="Guru SafePay; PayPal withdrawal historically available in many regions"),
+    Source("Guru - API integration search", "generic_html", True, url="https://www.guru.com/d/jobs/skill/api-integration/", payment="Guru SafePay; PayPal withdrawal historically available in many regions"),
+    Source("Algora - Cal.com bounties", "algora", True, url="https://algora.io/org/cal/bounties", payment="bounty payout; check Algora payout settings"),
+    Source("Algora - Trigger.dev bounties", "algora", True, url="https://algora.io/triggerdotdev/bounties", payment="bounty payout; check Algora payout settings"),
+    Source("Algora - ZIO bounties", "algora", False, url="https://algora.io/org/ZIO/bounties", payment="bounty payout; check Algora payout settings"),
     Source("Telegram - Upwork WebDev Projects", "telegram", True, channel="upwork_webdev", direction="public Upwork-like web dev projects"),
     Source("Telegram - Freelance Jobs Feed", "telegram", True, channel="freelancejob", direction="public freelance project feed"),
+    Source("Telegram - Upwork Projects", "telegram", True, channel="upwork_projects", direction="public Upwork-like project reposts"),
+    Source("Telegram - Upwork Jobs", "telegram", True, channel="upwork_jobs", direction="public Upwork-like job/project reposts"),
+    Source("Telegram - Upwork Freelance", "telegram", True, channel="upworkfreelance", direction="public Upwork/Freelancer-like reposts"),
+    Source("Telegram - Freelancer Projects", "telegram", True, channel="freelancer_projects", direction="public Freelancer-like project reposts"),
     Source("Telegram - Remote Freelance Projects", "telegram", False, channel="remotejobss", direction="mixed remote jobs; enable only if project-heavy"),
     Source("Telegram - Python Freelance", "telegram", False, channel="python_jobs_feed", direction="mixed Python projects/jobs"),
     Source("Telegram - React Freelance", "telegram", False, channel="reactjs_jobs", direction="mixed React projects/jobs"),
     Source("Telegram - NoCode Automation", "telegram", False, channel="nocodejobs", direction="n8n/Zapier/Make-like projects"),
+    Source("Workana - IT & Programming", "generic_html", False, url="https://www.workana.com/en/jobs?category=it-programming", payment="international freelance marketplace; enable if page returns project cards for your region"),
+    Source("Truelancer - Web scraping", "generic_html", False, url="https://www.truelancer.com/freelance-web-scraping-jobs", payment="international freelance marketplace; currently rate-limits public scraping"),
+    Source("Truelancer - JavaScript", "generic_html", False, url="https://www.truelancer.com/freelance-javascript-jobs", payment="international freelance marketplace; currently rate-limits public scraping"),
+    Source("Truelancer - WordPress", "generic_html", False, url="https://www.truelancer.com/freelance-wordpress-jobs", payment="international freelance marketplace; currently rate-limits public scraping"),
+    Source("Direction - PayPal-friendly direct gigs", "direction", False, direction="manual outreach/project feeds where client can pay invoice via PayPal"),
     Source("Direction - MVP web apps", "direction", False, direction="manual keyword direction for later source expansion"),
     Source("Direction - CRM automations", "direction", False, direction="manual keyword direction for later source expansion"),
     Source("Direction - AI tools", "direction", False, direction="manual keyword direction for later source expansion"),
@@ -366,6 +379,66 @@ def fetch_algora(source: Source, per_source: int) -> list[Lead]:
     return leads
 
 
+def fetch_generic_html_projects(source: Source, per_source: int) -> list[Lead]:
+    page = fetch_url(source.url)
+    leads: list[Lead] = []
+    seen: set[str] = set()
+
+    # Guru renders job cards in server HTML. Prefer card blocks when present.
+    blocks = re.split(r'<div[^>]+class="[^"]*jobRecord[^"]*"[^>]*>', page, flags=re.I)
+    if len(blocks) > 1:
+        for block in blocks[1:]:
+            chunk = block[:6000]
+            href_match = re.search(r'href="(?P<href>[^"]+)"', chunk, flags=re.I)
+            title_match = re.search(r'<a[^>]+href="[^"]+"[^>]*>(?P<title>[\s\S]{5,240}?)</a>', chunk, flags=re.I)
+            if not href_match or not title_match:
+                continue
+            url = absolute_url(href_match.group("href"), source.url)
+            title = clean_text(title_match.group("title"))
+            if "/d/jobs/c/" in url.lower() or "/d/jobs/lc/" in url.lower():
+                continue
+            if not title or url in seen:
+                continue
+            seen.add(url)
+            text = clean_text(chunk)
+            leads.append(Lead(
+                title=title[:180],
+                source=source.name,
+                url=url,
+                budget=parse_budget_from_text(text),
+                description=text[:900],
+                raw_source_kind=source.kind,
+            ))
+            if len(leads) >= per_source:
+                return leads
+
+    # Fallback for simple public listing pages.
+    link_pattern = re.compile(r'href="(?P<href>[^"]*(?:/jobs?/|/d/jobs/|freelance)[^"]*)"[^>]*>(?P<title>[\s\S]{8,220}?)</a>', re.I)
+    for match in link_pattern.finditer(page):
+        href = html.unescape(match.group("href"))
+        title = clean_text(match.group("title"))
+        url = absolute_url(href, source.url)
+        if not title or len(title) < 12 or url in seen:
+            continue
+        if "/d/jobs/c/" in url.lower() or "/d/jobs/lc/" in url.lower():
+            continue
+        if any(skip in url.lower() for skip in ["/login", "/signup", "/register", "/categories", "/how-it-works"]):
+            continue
+        seen.add(url)
+        context = clean_text(page[max(0, match.start() - 900): min(len(page), match.end() + 1600)])
+        leads.append(Lead(
+            title=title[:180],
+            source=source.name,
+            url=url,
+            budget=parse_budget_from_text(context),
+            description=context[:900],
+            raw_source_kind=source.kind,
+        ))
+        if len(leads) >= per_source:
+            break
+    return leads
+
+
 def fetch_telegram(source: Source, per_source: int) -> list[Lead]:
     url = f"https://t.me/s/{source.channel}"
     page = fetch_url(url)
@@ -483,6 +556,8 @@ def collect(args: argparse.Namespace) -> tuple[list[Lead], list[dict[str, str]]]
                 leads = fetch_peopleperhour(source, args.per_source)
             elif source.kind == "algora":
                 leads = fetch_algora(source, args.per_source)
+            elif source.kind == "generic_html":
+                leads = fetch_generic_html_projects(source, args.per_source)
             elif source.kind == "telegram":
                 leads = fetch_telegram(source, args.per_source)
             else:
@@ -599,7 +674,8 @@ def audit_sources() -> None:
     for i, source in enumerate(SOURCES, 1):
         state = "ENABLED " if source.enabled else "disabled"
         target = source.url or source.channel or source.query or source.direction
-        print(f"{i:02d}. {state} | {source.kind:14s} | {source.name} | {target}")
+        payment = f" | payment: {source.payment}" if source.payment else ""
+        print(f"{i:02d}. {state} | {source.kind:14s} | {source.name} | {target}{payment}")
     print("\nNote: public Telegram feeds can disappear or be renamed; later Telethon user-session support can reuse this source list for closed chats.")
 
 

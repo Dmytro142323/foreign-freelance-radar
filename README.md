@@ -4,6 +4,16 @@ Free cloud runner for `foreign_freelance_radar.py` using GitHub Actions.
 
 It runs every 2 hours and sends filtered freelance project cards to Telegram.
 
+## Enabled source groups
+
+- Freelancer.com public active projects API
+- PeoplePerHour public project pages
+- Guru public project pages, including PayPal-friendly marketplace notes
+- Algora public bounty pages
+- Public Telegram feeds with Upwork/Freelancer/freelance-project style reposts
+
+Disabled fallback sources are kept in the script for Workana, Truelancer, and extra Telegram feeds. Enable them only if their public pages/channels are useful for your region and do not return too much noise.
+
 ## Required GitHub Secrets
 
 Add these in:
