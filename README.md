@@ -31,6 +31,19 @@ Open:
 
 `Actions → Foreign Freelance Radar → Run workflow`
 
+## Telegram button menu
+
+Open:
+
+`Actions → Telegram Bot Menu → Run workflow`
+
+Choose:
+
+- `send-menu` — sends a Telegram menu with the button `🔎 Скинути всі існуючі замовлення`
+- `handle-updates` — manually checks recent button clicks
+
+The `Telegram Bot Menu` workflow also runs every 5 minutes and checks whether you clicked the button. GitHub Actions is not a true always-on bot server, so a clicked button can take a few minutes to respond.
+
 ## Schedule
 
 The workflow runs every 2 hours:

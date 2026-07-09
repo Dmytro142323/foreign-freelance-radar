@@ -1,0 +1,54 @@
+name: Telegram Bot Menu
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "What to do"
+        required: true
+        default: "send-menu"
+        type: choice
+        options:
+          - send-menu
+          - handle-updates
+  schedule:
+    # Free GitHub Actions is not a real always-on server, but this checks
+    # button clicks regularly. GitHub can delay scheduled jobs a little.
+    - cron: "*/5 * * * *"
+
+concurrency:
+  group: telegram-bot-menu
+  cancel-in-progress: false
+
+jobs:
+  telegram-menu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Send menu manually
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'send-menu'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python -m py_compile foreign_freelance_radar.py
+          python foreign_freelance_radar.py --send-menu
+
+      - name: Handle Telegram button clicks
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'handle-updates')
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python -m py_compile foreign_freelance_radar.py
+          python foreign_freelance_radar.py --limit 20 --per-source 20 --min-source 15 --handle-telegram-updates
+

@@ -654,19 +654,117 @@ def send_telegram(cards: list[str]) -> None:
     chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
     if not token or not chat_id:
         raise RuntimeError("Set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID before sending.")
-    api = f"https://api.telegram.org/bot{token}/sendMessage"
     for card in cards:
-        data = urllib.parse.urlencode({
+        telegram_api("sendMessage", {
             "chat_id": chat_id,
             "text": card[:3900],
             "disable_web_page_preview": "false",
-        }).encode("utf-8")
-        req = urllib.request.Request(api, data=data, method="POST")
-        with urllib.request.urlopen(req, timeout=20) as res:
-            body = res.read().decode("utf-8", errors="replace")
-            if '"ok":true' not in body:
-                raise RuntimeError(f"Telegram send failed: {body[:300]}")
+        })
         time.sleep(0.6)
+
+
+def telegram_api(method: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+    if not token:
+        raise RuntimeError("Set TELEGRAM_BOT_TOKEN before using Telegram.")
+    api = f"https://api.telegram.org/bot{token}/{method}"
+    data = None
+    headers = {"Content-Type": "application/json"}
+    if payload is not None:
+        data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    req = urllib.request.Request(api, data=data, headers=headers, method="POST" if data else "GET")
+    with urllib.request.urlopen(req, timeout=30) as res:
+        body = res.read().decode("utf-8", errors="replace")
+    parsed = json.loads(body)
+    if not parsed.get("ok"):
+        raise RuntimeError(f"Telegram API {method} failed: {body[:500]}")
+    return parsed
+
+
+def send_telegram_menu() -> None:
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+    if not chat_id:
+        raise RuntimeError("Set TELEGRAM_CHAT_ID before sending the menu.")
+    telegram_api("sendMessage", {
+        "chat_id": chat_id,
+        "text": (
+            "🤖 Freelance Radar menu\n\n"
+            "Натисни кнопку нижче, і я скину всі актуальні замовлення, які знайду зараз."
+        ),
+        "reply_markup": {
+            "inline_keyboard": [[
+                {"text": "🔎 Скинути всі існуючі замовлення", "callback_data": "fetch_orders"}
+            ]]
+        },
+    })
+
+
+def handle_telegram_updates(args: argparse.Namespace) -> int:
+    chat_id = str(os.environ.get("TELEGRAM_CHAT_ID", "")).strip()
+    if not chat_id:
+        raise RuntimeError("Set TELEGRAM_CHAT_ID before handling updates.")
+
+    updates = telegram_api("getUpdates", {"timeout": 0, "allowed_updates": ["message", "callback_query"]}).get("result", [])
+    processed = 0
+    max_update_id: int | None = None
+
+    for update in updates:
+        update_id = update.get("update_id")
+        if isinstance(update_id, int):
+            max_update_id = update_id if max_update_id is None else max(max_update_id, update_id)
+
+        message = update.get("message") or {}
+        callback = update.get("callback_query") or {}
+        callback_message = callback.get("message") or {}
+        source_chat = (
+            str((message.get("chat") or {}).get("id") or "")
+            or str((callback_message.get("chat") or {}).get("id") or "")
+        )
+        if source_chat != chat_id:
+            continue
+
+        text = (message.get("text") or "").strip().lower()
+        data = (callback.get("data") or "").strip()
+
+        if text in {"/start", "/menu", "menu", "меню"}:
+            send_telegram_menu()
+            processed += 1
+            continue
+
+        if data == "fetch_orders":
+            callback_id = callback.get("id")
+            if callback_id:
+                telegram_api("answerCallbackQuery", {
+                    "callback_query_id": callback_id,
+                    "text": "Шукаю актуальні замовлення…",
+                    "show_alert": False,
+                })
+            telegram_api("sendMessage", {
+                "chat_id": chat_id,
+                "text": "🔎 Шукаю актуальні freelance/project замовлення. Зараз скину картки.",
+            })
+            leads, errors = collect(args)
+            save_results(leads, errors)
+            cards = [card_text(lead, i) for i, lead in enumerate(leads, 1)]
+            if cards:
+                send_telegram(cards)
+            else:
+                telegram_api("sendMessage", {
+                    "chat_id": chat_id,
+                    "text": "Не знайшов карток після фільтрації. Можна знизити --min-score.",
+                })
+            if errors:
+                telegram_api("sendMessage", {
+                    "chat_id": chat_id,
+                    "text": "Деякі джерела дали помилки:\n" + "\n".join(f"- {e['source']}: {e['error']}" for e in errors[:8]),
+                })
+            send_telegram_menu()
+            processed += 1
+
+    if max_update_id is not None:
+        telegram_api("getUpdates", {"offset": max_update_id + 1, "timeout": 0})
+    print(f"Processed Telegram updates: {processed}")
+    return processed
 
 
 def audit_sources() -> None:
@@ -688,6 +786,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--min-source", type=int, default=15, help="Soft target for minimum number of cards before relaxing strictness.")
     p.add_argument("--min-score", type=float, default=1.2, help="Soft relevance threshold. Lower = more leads.")
     p.add_argument("--send", action="store_true", help="Send cards to Telegram. Without this, dry-run prints to terminal.")
+    p.add_argument("--send-menu", action="store_true", help="Send Telegram inline menu with a fetch-orders button.")
+    p.add_argument("--handle-telegram-updates", action="store_true", help="Handle Telegram /menu and button clicks once, then exit.")
     p.add_argument("--dry-run", action="store_true", help="Print cards only. This is the default if --send is not used.")
     p.add_argument("--sleep", type=float, default=0.4, help="Delay between source requests.")
     return p
@@ -699,6 +799,15 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.audit_sources:
         audit_sources()
+        return 0
+
+    if args.send_menu:
+        send_telegram_menu()
+        print("Telegram menu sent.")
+        return 0
+
+    if args.handle_telegram_updates:
+        handle_telegram_updates(args)
         return 0
 
     leads, errors = collect(args)
